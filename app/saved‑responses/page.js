@@ -32,7 +32,7 @@ export default function SavedResponses() {
       <h1>Mes réponses enregistrées</h1>
       <a href="/dashboard" style={{ color: '#2563eb' }}>← Retour au tableau de bord</a>
 
-      {loading && <p>Chargement en cours…</p>}
+      {loading && <p>Chargement en cours...</p>}
       {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
 
       {!loading && responseList.length === 0 && (
@@ -47,4 +47,4 @@ export default function SavedResponses() {
       ))}
     </main>
   );
-        }
+}
