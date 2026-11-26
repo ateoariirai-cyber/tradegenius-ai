@@ -14,15 +14,14 @@ export default function SavedResponses() {
       setErrorMsg('');
       const { data, error } = await supabase
         .from('reponses_ia')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
 
       console.log("DONNEES RECUES :", data);
-      console.log("ERREUR :", error);
+      console.log("ERREUR COMPLETE :", error);
 
       if (error) {
         setErrorMsg("Impossible de charger les réponses");
-        console.error(error);
+        console.error("ERREUR SUPABASE :", error);
       } else {
         setResponseList(data);
       }
