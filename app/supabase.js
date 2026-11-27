@@ -1,11 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+let client = null;
 
-// On ajoute une petite sécurité pour éviter que ça plante si les clés manquent
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn("ATTENTION : Les clés Supabase ne sont pas chargées !");
+function getClient() {
+  if (client) return client;
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("Variables d'environnement Supabase manquantes");
+  }
+  
+  client = createClient(supabaseUrl, supabaseAnonKey);
+  return client;
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = new Proxy({}, {
+  get(target, prop, receiver) {
+    return Reflect.get(getClient(), prop, receiver);
+  }
+});
