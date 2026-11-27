@@ -23,31 +23,38 @@ export default function AgentsPage() {
     }
   }, []);
 
-  const creerAgent = async (e) => {
+    const creerAgent = async (e) => {
     e.preventDefault();
-    setErreur('');
+    setErreur('⏳ Connexion à Supabase en cours...');
 
-    const { error } = await supabase.from('agents_trading').insert([
-      {
-        nom_agent: nomAgent,
-        type_agent: typeAgent,
-        paire_marche: paireMarche,
-        time_frame: timeFrame
+    try {
+      const { error } = await supabase.from('agents_trading').insert([
+        {
+          nom_agent: nomAgent,
+          type_agent: typeAgent,
+          paire_marche: paireMarche,
+          time_frame: timeFrame
+        }
+      ]);
+
+      if (error) {
+        setErreur("Erreur Supabase : " + error.message);
+        return;
       }
-    ]);
 
-    if (error) {
-      setErreur("Erreur Supabase : " + error.message);
-      return;
+      // Si tout va bien :
+      setErreur(''); 
+      setNomAgent('');
+      setTypeAgent('');
+      setPaireMarche('');
+      setTimeFrame('');
+      chargerAgents();
+
+    } catch (err) {
+      // Si le code plante complètement, on affiche l'erreur
+      setErreur("Erreur critique : " + err.message);
     }
-
-    setNomAgent('');
-    setTypeAgent('');
-    setPaireMarche('');
-    setTimeFrame('');
-    chargerAgents();
   };
-
   useEffect(() => {
     chargerAgents();
   }, [chargerAgents]);
