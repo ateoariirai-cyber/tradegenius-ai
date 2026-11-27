@@ -10,7 +10,6 @@ export default function AgentsPage() {
   const [listeAgents, setListeAgents] = useState([]);
   const [erreur, setErreur] = useState('');
 
-  // Utilisation de useCallback pour corriger l'erreur Vercel (dépendances)
   const chargerAgents = useCallback(async () => {
     const { data, error } = await supabase
       .from('agents_trading')
@@ -62,43 +61,19 @@ export default function AgentsPage() {
       <form onSubmit={creerAgent} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '30px' }}>
         <div>
           <label style={{ display: 'block', fontWeight: 'bold' }}>Nom de l'agent</label>
-          <input 
-            value={nomAgent} 
-            onChange={(e) => setNomAgent(e.target.value)} 
-            required 
-            style={{ width: '100%', padding: '8px' }}
-            placeholder="Ex: Market Intelligence"
-          />
+          <input value={nomAgent} onChange={(e) => setNomAgent(e.target.value)} required style={{ width: '100%', padding: '8px' }} placeholder="Ex: Market Intelligence" />
         </div>
         <div>
           <label style={{ display: 'block', fontWeight: 'bold' }}>Type d'agent</label>
-          <input 
-            value={typeAgent} 
-            onChange={(e) => setTypeAgent(e.target.value)} 
-            required 
-            style={{ width: '100%', padding: '8px' }}
-            placeholder="Ex: Analyste, Risk, Exécution..."
-          />
+          <input value={typeAgent} onChange={(e) => setTypeAgent(e.target.value)} required style={{ width: '100%', padding: '8px' }} placeholder="Ex: Analyste" />
         </div>
         <div>
           <label style={{ display: 'block', fontWeight: 'bold' }}>Paire du marché</label>
-          <input 
-            value={paireMarche} 
-            onChange={(e) => setPaireMarche(e.target.value)} 
-            required 
-            style={{ width: '100%', padding: '8px' }}
-            placeholder="Ex: XAUUSD"
-          />
+          <input value={paireMarche} onChange={(e) => setPaireMarche(e.target.value)} required style={{ width: '100%', padding: '8px' }} placeholder="Ex: XAUUSD" />
         </div>
         <div>
           <label style={{ display: 'block', fontWeight: 'bold' }}>Time Frame</label>
-          <input 
-            value={timeFrame} 
-            onChange={(e) => setTimeFrame(e.target.value)} 
-            required 
-            style={{ width: '100%', padding: '8px' }}
-            placeholder="Ex: H1, M15..."
-          />
+          <input value={timeFrame} onChange={(e) => setTimeFrame(e.target.value)} required style={{ width: '100%', padding: '8px' }} placeholder="Ex: H1" />
         </div>
         <button type="submit" style={{ padding: '10px', backgroundColor: '#0070f3', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>
           Créer l'agent IA
@@ -118,4 +93,4 @@ export default function AgentsPage() {
       )}
     </main>
   );
-                        }
+        }
