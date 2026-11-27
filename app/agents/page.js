@@ -38,8 +38,7 @@ export default function AgentsPage() {
     ]);
 
     if (error) {
-      setErreur("Erreur lors de la création. Vérifie ta connexion.");
-      console.error(error);
+      setErreur("Erreur Supabase : " + error.message);
       return;
     }
 
