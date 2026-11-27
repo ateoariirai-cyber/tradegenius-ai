@@ -2,12 +2,14 @@
 import { useState } from 'react';
 import { orchestrateTradingCycle } from '../../lib/agents-engine';
 import { calculateRiskAndLots } from '../../lib/risk-engine';
-import { fetchMarketPrice } from '../../lib/data-engine';
+import { fetchMarketPrice, fetchHistoricalData } from '../../lib/data-engine';
+import { calculateAllIndicators } from '../../lib/indicators-engine';
 
 export default function TestPage() {
   const [logs, setLogs] = useState([]);
   const [riskResult, setRiskResult] = useState(null);
   const [marketData, setMarketData] = useState(null);
+  const [indicators, setIndicators] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const lancerTest = async () => {
@@ -15,6 +17,7 @@ export default function TestPage() {
     setLogs([]);
     setRiskResult(null);
     setMarketData(null);
+    setIndicators(null);
 
     // 1. Le Data Engine va chercher le vrai prix du BTC
     const liveData = await fetchMarketPrice('BTCUSD');
@@ -26,21 +29,31 @@ export default function TestPage() {
       return;
     }
 
-    // 2. On lance le cycle des agents avec les vraies données
-    const cycleResult = await orchestrateTradingCycle(liveData);
-    setLogs(cycleResult.logs);
+    // 2. On récupère l'historique et on calcule les indicateurs
+    const historicalData = fetchHistoricalData('BTCUSD', '1h', 200);
+    const indicatorResults = calculateAllIndicators(historicalData);
+    setIndicators(indicatorResults);
 
-    // 3. Si le signal est validé, le Risk Engine calcule
+    // 3. On lance le cycle des agents
+    const cycleResult = await orchestrateTradingCycle(liveData);
+    
+    // On ajoute la ligne des indicateurs aux logs de l'orchestrateur
+    const finalLogs = [
+      ...cycleResult.logs,
+      `[Indicateurs] Tendance: ${indicatorResults.trend} | RSI: ${indicatorResults.rsi14} | ATR: ${indicatorResults.atr14}`
+    ];
+    setLogs(finalLogs);
+
+    // 4. Si le signal est validé, le Risk Engine calcule
     if (cycleResult.action === 'TRADE_READY') {
-      
       const riskParams = {
-        accountBalance: 10000, // On met 10 000$ pour autoriser le trade cette fois
+        accountBalance: 10000,
         entryPrice: liveData.price,
-        stopLossPrice: liveData.price - 500, // Stop loss à 500$ en dessous (pour le BTC)
+        stopLossPrice: liveData.price - 500, 
         symbolSpecs: {
           minLot: 0.01,
           lotStep: 0.01,
-          tickSize: 0.1, // Le BTC bouge par 0.1$
+          tickSize: 0.1,
           tickValue: 0.1
         }
       };
@@ -71,6 +84,12 @@ export default function TestPage() {
           <p><strong>Symbole :</strong> {marketData.symbol}</p>
           <p><strong>Prix Actuel :</strong> {marketData.price} $</p>
           <p><strong>Statut :</strong> {marketData.status}</p>
+        </div>
+      )}
+
+      {indicators && indicators.error && (
+        <div style={{ background: '#fff3cd', color: '#856404', padding: '15px', borderRadius: '5px', marginBottom: '20px' }}>
+          <strong>⚠️ Indicateurs :</strong> {indicators.error}
         </div>
       )}
 
