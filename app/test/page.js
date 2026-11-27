@@ -4,12 +4,14 @@ import { orchestrateTradingCycle } from '../../lib/agents-engine';
 import { calculateRiskAndLots } from '../../lib/risk-engine';
 import { fetchMarketPrice, fetchHistoricalData } from '../../lib/data-engine';
 import { calculateAllIndicators } from '../../lib/indicators-engine';
+import { validateTrade } from '../../lib/validation-engine';
 
 export default function TestPage() {
   const [logs, setLogs] = useState([]);
   const [riskResult, setRiskResult] = useState(null);
   const [marketData, setMarketData] = useState(null);
   const [indicators, setIndicators] = useState(null);
+  const [validationResult, setValidationResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const lancerTest = async () => {
@@ -18,6 +20,7 @@ export default function TestPage() {
     setRiskResult(null);
     setMarketData(null);
     setIndicators(null);
+    setValidationResult(null);
 
     // 1. Le Data Engine va chercher le vrai prix du BTC
     const liveData = await fetchMarketPrice('BTCUSD');
@@ -37,14 +40,13 @@ export default function TestPage() {
     // 3. On lance le cycle des agents
     const cycleResult = await orchestrateTradingCycle(liveData);
     
-    // On ajoute la ligne des indicateurs aux logs de l'orchestrateur
     const finalLogs = [
       ...cycleResult.logs,
       `[Indicateurs] Tendance: ${indicatorResults.trend} | RSI: ${indicatorResults.rsi14} | ATR: ${indicatorResults.atr14}`
     ];
     setLogs(finalLogs);
 
-    // 4. Si le signal est validé, le Risk Engine calcule
+    // 4. Le Risk Engine calcule
     if (cycleResult.action === 'TRADE_READY') {
       const riskParams = {
         accountBalance: 10000,
@@ -60,6 +62,10 @@ export default function TestPage() {
 
       const riskCalculation = calculateRiskAndLots(riskParams);
       setRiskResult(riskCalculation);
+
+      // 5. Le Validation Engine (Le Portier final)
+      const validation = validateTrade(liveData, cycleResult, indicatorResults);
+      setValidationResult(validation);
     }
 
     setLoading(false);
@@ -87,12 +93,6 @@ export default function TestPage() {
         </div>
       )}
 
-      {indicators && indicators.error && (
-        <div style={{ background: '#fff3cd', color: '#856404', padding: '15px', borderRadius: '5px', marginBottom: '20px' }}>
-          <strong>⚠️ Indicateurs :</strong> {indicators.error}
-        </div>
-      )}
-
       {logs.length > 0 && (
         <div style={{ background: '#1e1e1e', color: '#00ff00', padding: '15px', borderRadius: '5px', marginBottom: '20px' }}>
           <h3>🧠 Logs de l'Orchestrateur :</h3>
@@ -103,13 +103,21 @@ export default function TestPage() {
       )}
 
       {riskResult && (
-        <div style={{ background: riskResult.approved ? '#d4edda' : '#f8d7da', color: riskResult.approved ? '#155724' : '#721c24', padding: '15px', borderRadius: '5px' }}>
+        <div style={{ background: riskResult.approved ? '#d4edda' : '#f8d7da', color: riskResult.approved ? '#155724' : '#721c24', padding: '15px', borderRadius: '5px', marginBottom: '20px' }}>
           <h3>🛡️ Résultat du Risk Engine :</h3>
           <p><strong>Statut :</strong> {riskResult.approved ? '✅ TRADE AUTORISÉ' : '❌ TRADE REFUSÉ'}</p>
           <p><strong>Raison :</strong> {riskResult.reason}</p>
           {riskResult.lotSize && <p><strong>Taille du lot :</strong> {riskResult.lotSize}</p>}
         </div>
       )}
+
+      {validationResult && (
+        <div style={{ background: validationResult.valid ? '#d1ecf1' : '#f8d7da', color: validationResult.valid ? '#0c5460' : '#721c24', padding: '15px', borderRadius: '5px' }}>
+          <h3>🚦 Validation Engine (Le Portier) :</h3>
+          <p><strong>Statut :</strong> {validationResult.valid ? '✅ ORDRE PRÊT À ÊTRE ENVOYÉ' : '⛔ BLOCAGE DE SÉCURITÉ'}</p>
+          <p><strong>Détail :</strong> {validationResult.reason}</p>
+        </div>
+      )}
     </main>
   );
-        }
+}
