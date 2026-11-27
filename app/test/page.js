@@ -10,7 +10,6 @@ export default function TestPage() {
   const [logs, setLogs] = useState([]);
   const [riskResult, setRiskResult] = useState(null);
   const [marketData, setMarketData] = useState(null);
-  const [indicators, setIndicators] = useState(null);
   const [validationResult, setValidationResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -19,10 +18,9 @@ export default function TestPage() {
     setLogs([]);
     setRiskResult(null);
     setMarketData(null);
-    setIndicators(null);
     setValidationResult(null);
 
-    // 1. Le Data Engine va chercher le vrai prix du BTC
+    // 1. Data Engine
     const liveData = await fetchMarketPrice('BTCUSD');
     setMarketData(liveData);
 
@@ -32,21 +30,16 @@ export default function TestPage() {
       return;
     }
 
-    // 2. On récupère l'historique et on calcule les indicateurs
+    // 2. Indicators Engine
     const historicalData = fetchHistoricalData('BTCUSD', '1h', 200);
     const indicatorResults = calculateAllIndicators(historicalData);
-    setIndicators(indicatorResults);
 
-    // 3. On lance le cycle des agents
-    const cycleResult = await orchestrateTradingCycle(liveData);
-    
-    const finalLogs = [
-      ...cycleResult.logs,
-      `[Indicateurs] Tendance: ${indicatorResults.trend} | RSI: ${indicatorResults.rsi14} | ATR: ${indicatorResults.atr14}`
-    ];
-    setLogs(finalLogs);
+    // 3. Agents Engine (on lui donne les données + les indicateurs)
+    const marketDataWithIndicators = { ...liveData, indicators: indicatorResults };
+    const cycleResult = await orchestrateTradingCycle(marketDataWithIndicators);
+    setLogs(cycleResult.logs);
 
-    // 4. Le Risk Engine calcule
+    // 4. Risk Engine & Validation Engine
     if (cycleResult.action === 'TRADE_READY') {
       const riskParams = {
         accountBalance: 10000,
@@ -63,7 +56,6 @@ export default function TestPage() {
       const riskCalculation = calculateRiskAndLots(riskParams);
       setRiskResult(riskCalculation);
 
-      // 5. Le Validation Engine (Le Portier final)
       const validation = validateTrade(liveData, cycleResult, indicatorResults);
       setValidationResult(validation);
     }
