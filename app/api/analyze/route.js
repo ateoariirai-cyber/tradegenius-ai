@@ -19,46 +19,54 @@ export async function POST(req) {
       prompt = `Analyse ces données de marché : ${JSON.stringify(marketData)}.`;
     }
 
-    // Liste de modèles gratuits (de secours)
+    // Liste de secours : on teste les modèles un par un
     const models = [
       "qwen/qwen-2-7b-instruct:free",
-      "google/gemma-2-9b-it:free",
-      "mistralai/mistral-7b-instruct:free"
+      "meta-llama/llama-3-8b-instruct:free",
+      "google/gemma-7b-it:free"
     ];
 
     let aiText = null;
     let lastError = null;
 
     for (const model of models) {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey.trim()}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://tradegenius-ai-lkhv.vercel.app',
-          'X-Title': 'TradeGenius AI'
-        },
-        body: JSON.stringify({
-          model: model,
-          max_tokens: 150,
-          messages: [{ role: "user", content: prompt }]
-        })
-      });
+      try {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey.trim()}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://tradegenius-ai-lkhv.vercel.app',
+            'X-Title': 'TradeGenius AI'
+          },
+          body: JSON.stringify({
+            model: model,
+            max_tokens: 150,
+            messages: [{ role: "user", content: prompt }]
+          })
+        });
 
-      const data = await response.json();
-      
-      if (!data.error && data.choices?.[0]?.message?.content) {
-        aiText = data.choices[0].message.content;
-        break; // Si ça marche, on arrête la boucle et on renvoie l'analyse !
-      } else {
-        lastError = data.error?.message || "Réponse vide";
+        const data = await response.json();
+        
+        // Si on a une réponse valide, on la garde et on arrête la boucle
+        if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+          aiText = data.choices[0].message.content;
+          break; 
+        } else {
+          // Sinon on note l'erreur et on passe au modèle suivant
+          lastError = data.error?.message || "Réponse vide";
+        }
+      } catch (err) {
+        lastError = err.message;
       }
     }
 
+    // Si un modèle a répondu, on affiche le résultat
     if (aiText) {
       return NextResponse.json({ analysis: aiText });
     } else {
-      return NextResponse.json({ analysis: `❌ Tous les modèles ont échoué. Dernière erreur : ${lastError}` });
+      // Si vraiment aucun modèle ne marche, on affiche une erreur claire
+      return NextResponse.json({ analysis: `❌ L'IA est temporairement indisponible. Dernier essai : ${lastError}` });
     }
 
   } catch (error) {
