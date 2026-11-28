@@ -28,7 +28,7 @@ export async function POST(req) {
         'X-Title': 'TradeGenius AI'
       },
       body: JSON.stringify({
-        model: "mistralai/mistral-7b-instruct:free", // Modèle Mistral gratuit et stable
+        model: "openrouter/free", // Routeur vers un modèle gratuit disponible
         max_tokens: 150,
         messages: [{ role: "user", content: prompt }]
       })
