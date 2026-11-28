@@ -28,7 +28,7 @@ export async function POST(req) {
         'X-Title': 'TradeGenius AI'
       },
       body: JSON.stringify({
-        model: "openrouter/free", // Routeur vers un modèle gratuit disponible
+        model: "microsoft/phi-3-mini-128k-instruct:free", // Modèle Microsoft ultra-stable
         max_tokens: 150,
         messages: [{ role: "user", content: prompt }]
       })
@@ -40,7 +40,13 @@ export async function POST(req) {
       return NextResponse.json({ analysis: `❌ Erreur OpenRouter : ${data.error.message}` });
     }
 
-    const aiText = data.choices?.[0]?.message?.content || "❌ Analyse vide (Réponse vide de l'IA).";
+    // On vérifie si l'IA a bien répondu
+    const aiText = data.choices?.[0]?.message?.content;
+
+    if (!aiText) {
+        // Si c'est vide, on affiche les données brutes pour comprendre (Debug)
+        return NextResponse.json({ analysis: `❌ Debug (Réponse vide) : ${JSON.stringify(data)}` });
+    }
 
     return NextResponse.json({ analysis: aiText });
 
