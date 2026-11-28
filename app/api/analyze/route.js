@@ -22,20 +22,20 @@ export async function POST(req) {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey.trim()}`, // .trim() enlève les espaces invisibles
+        'Authorization': `Bearer ${apiKey.trim()}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://tradegenius-ai-lkhv.vercel.app',
         'X-Title': 'TradeGenius AI'
       },
       body: JSON.stringify({
-                model: "google/gemma-4-26b-a4b-it:free", // Modèle Google gratuit très fiable
+        model: "meta-llama/llama-3.1-8b-instruct:free",
+        max_tokens: 150,
         messages: [{ role: "user", content: prompt }]
       })
     });
 
     const data = await response.json();
     
-    // Si OpenRouter renvoie une erreur, on l'affiche en clair !
     if (data.error) {
       return NextResponse.json({ analysis: `❌ Erreur OpenRouter : ${data.error.message}` });
     }
