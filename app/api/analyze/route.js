@@ -4,10 +4,10 @@ import { NextResponse } from 'next/server';
 export async function POST(req) {
   try {
     const { agentId, marketData } = await req.json();
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY;
 
     if (!apiKey) {
-      return NextResponse.json({ analysis: "❌ Erreur : Clé API manquante sur Vercel." });
+      return NextResponse.json({ analysis: "❌ Erreur : Clé API Groq manquante sur Vercel." });
     }
 
     let prompt = "";
@@ -19,55 +19,28 @@ export async function POST(req) {
       prompt = `Analyse ces données de marché : ${JSON.stringify(marketData)}.`;
     }
 
-    // Liste de secours : on teste les modèles un par un
-    const models = [
-      "qwen/qwen-2-7b-instruct:free",
-      "meta-llama/llama-3-8b-instruct:free",
-      "google/gemma-7b-it:free"
-    ];
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey.trim()}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: "llama3-8b-8192", // Le modèle Llama 3 sur Groq
+        max_tokens: 150,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
 
-    let aiText = null;
-    let lastError = null;
-
-    for (const model of models) {
-      try {
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey.trim()}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://tradegenius-ai-lkhv.vercel.app',
-            'X-Title': 'TradeGenius AI'
-          },
-          body: JSON.stringify({
-            model: model,
-            max_tokens: 150,
-            messages: [{ role: "user", content: prompt }]
-          })
-        });
-
-        const data = await response.json();
-        
-        // Si on a une réponse valide, on la garde et on arrête la boucle
-        if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
-          aiText = data.choices[0].message.content;
-          break; 
-        } else {
-          // Sinon on note l'erreur et on passe au modèle suivant
-          lastError = data.error?.message || "Réponse vide";
-        }
-      } catch (err) {
-        lastError = err.message;
-      }
+    const data = await response.json();
+    
+    if (data.error) {
+      return NextResponse.json({ analysis: `❌ Erreur Groq : ${data.error.message}` });
     }
 
-    // Si un modèle a répondu, on affiche le résultat
-    if (aiText) {
-      return NextResponse.json({ analysis: aiText });
-    } else {
-      // Si vraiment aucun modèle ne marche, on affiche une erreur claire
-      return NextResponse.json({ analysis: `❌ L'IA est temporairement indisponible. Dernier essai : ${lastError}` });
-    }
+    const aiText = data.choices?.[0]?.message?.content || "❌ Analyse vide (Réponse vide de l'IA).";
+
+    return NextResponse.json({ analysis: aiText });
 
   } catch (error) {
     console.error("Erreur API:", error);
