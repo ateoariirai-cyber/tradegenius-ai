@@ -7,7 +7,7 @@ export async function POST(req) {
     const apiKey = process.env.OPENROUTER_API_KEY;
 
     if (!apiKey) {
-      return NextResponse.json({ error: "Clé API manquante" }, { status: 500 });
+      return NextResponse.json({ analysis: "❌ Erreur : Clé API manquante sur Vercel." });
     }
 
     let prompt = "";
@@ -22,24 +22,30 @@ export async function POST(req) {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${apiKey.trim()}`, // .trim() enlève les espaces invisibles
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://tradegenius-ai-lkhv.vercel.app',
         'X-Title': 'TradeGenius AI'
       },
       body: JSON.stringify({
-        model: "meta-llama/llama-3-8b-instruct:free",
+        model: "google/gemini-2.0-flash-exp:free", // Modèle Google gratuit très fiable
         messages: [{ role: "user", content: prompt }]
       })
     });
 
     const data = await response.json();
-    const aiText = data.choices?.[0]?.message?.content || "Analyse indisponible.";
+    
+    // Si OpenRouter renvoie une erreur, on l'affiche en clair !
+    if (data.error) {
+      return NextResponse.json({ analysis: `❌ Erreur OpenRouter : ${data.error.message}` });
+    }
+
+    const aiText = data.choices?.[0]?.message?.content || "❌ Analyse vide (Réponse vide de l'IA).";
 
     return NextResponse.json({ analysis: aiText });
 
   } catch (error) {
     console.error("Erreur API:", error);
-    return NextResponse.json({ error: "Erreur lors de l'analyse" }, { status: 500 });
+    return NextResponse.json({ analysis: `❌ Erreur Serveur : ${error.message}` });
   }
 }
