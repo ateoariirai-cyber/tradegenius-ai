@@ -26,7 +26,7 @@ export async function POST(req) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: "llama3-8b-8192", // Le modèle Llama 3 sur Groq
+        model: "llama-3.1-8b-instant", // Le nouveau modèle officiel de Groq
         max_tokens: 150,
         messages: [{ role: "user", content: prompt }]
       })
